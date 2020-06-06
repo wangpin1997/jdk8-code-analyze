@@ -128,7 +128,7 @@ public class LockSupport {
         }
     }
 
-    //挂起到指定的时间
+    //挂起到指定的时间 单位为ms 譬如2020-06-04 21:17:12 转成时间
     public static void parkUntil(Object blocker, long deadline) {
         Thread t = Thread.currentThread();
         setBlocker(t, blocker);

@@ -226,6 +226,7 @@ class Thread implements Runnable {
      * Set by (private) java.util.concurrent.locks.LockSupport.setBlocker
      * Accessed using java.util.concurrent.locks.LockSupport.getBlocker
      */
+    //用来存放park方法用来传递的blocker对象
     volatile Object parkBlocker;
 
     /* The object in which this thread is blocked in an interruptible I/O
