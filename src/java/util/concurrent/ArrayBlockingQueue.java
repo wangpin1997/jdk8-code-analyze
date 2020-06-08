@@ -44,51 +44,12 @@ import java.lang.ref.WeakReference;
 import java.util.Spliterators;
 import java.util.Spliterator;
 
-/**
- * A bounded {@linkplain BlockingQueue blocking queue} backed by an
- * array.  This queue orders elements FIFO (first-in-first-out).  The
- * <em>head</em> of the queue is that element that has been on the
- * queue the longest time.  The <em>tail</em> of the queue is that
- * element that has been on the queue the shortest time. New elements
- * are inserted at the tail of the queue, and the queue retrieval
- * operations obtain elements at the head of the queue.
- *
- * <p>This is a classic &quot;bounded buffer&quot;, in which a
- * fixed-sized array holds elements inserted by producers and
- * extracted by consumers.  Once created, the capacity cannot be
- * changed.  Attempts to {@code put} an element into a full queue
- * will result in the operation blocking; attempts to {@code take} an
- * element from an empty queue will similarly block.
- *
- * <p>This class supports an optional fairness policy for ordering
- * waiting producer and consumer threads.  By default, this ordering
- * is not guaranteed. However, a queue constructed with fairness set
- * to {@code true} grants threads access in FIFO order. Fairness
- * generally decreases throughput but reduces variability and avoids
- * starvation.
- *
- * <p>This class and its iterator implement all of the
- * <em>optional</em> methods of the {@link Collection} and {@link
- * Iterator} interfaces.
- *
- * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
- *
- * @since 1.5
- * @author Doug Lea
- * @param <E> the type of elements held in this collection
- */
-//他是线程安全的容器，当然，如果在addAll()等方法不见得安全，
+
+//基于数组的阻塞队列，是线程安全的容器，当然，如果在addAll()等方法不见得安全，
 public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         implements BlockingQueue<E>, java.io.Serializable {
 
-    /**
-     * Serialization ID. This class relies on default serialization
-     * even for the items array, which is default-serialized, even if
-     * it is empty. Otherwise it could not be declared final, which is
-     * necessary here.
-     */
+
     private static final long serialVersionUID = -817911632652898426L;
 
     /** The queued items */
@@ -104,7 +65,8 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     int putIndex;
 
     /** Number of elements in the queue */
-    //队列中元素个数
+    //队列中元素个数，
+    // 为何没被volatile修饰，因为他的操作都是带锁的，本就有原子性和可见性
     int count;
 
     /*
@@ -161,32 +123,34 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      * Call only when holding lock.
      */
     private void enqueue(E x) {
-        // assert lock.getHoldCount() == 1;
-        // assert items[putIndex] == null;
+        //元素入队
         final Object[] items = this.items;
+        //往putIndex下标存储
         items[putIndex] = x;
+        //计算下一个元素应该存放位置的下标是否超过容器长度
         if (++putIndex == items.length)
             putIndex = 0;
         count++;
+        //唤醒notEmpty条件队列中因为调用take操作而被阻塞的一个线程
         notEmpty.signal();
     }
 
-    /**
-     * Extracts element at current take position, advances, and signals.
-     * Call only when holding lock.
-     */
+    //出队
     private E dequeue() {
-        // assert lock.getHoldCount() == 1;
-        // assert items[takeIndex] != null;
         final Object[] items = this.items;
+
+        //获取元素值
         @SuppressWarnings("unchecked")
         E x = (E) items[takeIndex];
+        //数组中的对应下标修改为null
         items[takeIndex] = null;
+        //对头指针计算，超过了队列长度，指针就又等于0
         if (++takeIndex == items.length)
             takeIndex = 0;
         count--;
         if (itrs != null)
             itrs.elementDequeued();
+        //唤醒notFull条件队列中因为调用put方法而被挂起的线程
         notFull.signal();
         return x;
     }
@@ -327,18 +291,24 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      *
      * @throws NullPointerException if the specified element is null
      */
+    //往队列尾部添加元素，成功返回true，队列满了则丢弃且返回false
     public boolean offer(E e) {
+        //判断是否为null，是则抛异常
         checkNotNull(e);
+        //获取锁，上锁
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            //队列满了，返回false
             if (count == items.length)
                 return false;
             else {
+                //入队
                 enqueue(e);
                 return true;
             }
         } finally {
+            //释放锁
             lock.unlock();
         }
     }
@@ -350,27 +320,28 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      * @throws InterruptedException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
+    //队列队尾添加元素，如果队列有空闲则插入后返回true，如果没有空闲，则阻塞当前线程
+    //直到有空闲为止，并插入成功后返回true，如果中断，则抛异常
     public void put(E e) throws InterruptedException {
+        //是否null，null抛空指针
         checkNotNull(e);
+        //获取锁，上锁（可被中断）
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
+            //队列满了，则挂起等待
             while (count == items.length)
                 notFull.await();
+            //有空闲了则入队
             enqueue(e);
         } finally {
+            //释放锁
             lock.unlock();
         }
     }
 
-    /**
-     * Inserts the specified element at the tail of this queue, waiting
-     * up to the specified wait time for space to become available if
-     * the queue is full.
-     *
-     * @throws InterruptedException {@inheritDoc}
-     * @throws NullPointerException {@inheritDoc}
-     */
+   //带超时时间的入队。挂起timeout时间后，还没被唤醒，则返回false
+    //往队列尾部添加元素，成功返回true，队列满了则丢弃且返回false
     public boolean offer(E e, long timeout, TimeUnit unit)
         throws InterruptedException {
 
@@ -391,28 +362,39 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         }
     }
 
+    //删除头节点
     public E poll() {
+        //获取锁，上锁
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            //队列为空，返回null，否则头节点出队
             return (count == 0) ? null : dequeue();
         } finally {
+            //释放锁
             lock.unlock();
         }
     }
 
+    //获取当前队列头部元素并从队列中移除它，如果队列为空，则阻塞当前线程，直到不为空
+    //如果阻塞过程中被打断，则抛出异常
     public E take() throws InterruptedException {
+        //获取锁。上锁（可中断）
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
+            //为空则等待
             while (count == 0)
                 notEmpty.await();
+            //不为空了，删除头节点，并返回
             return dequeue();
         } finally {
+            //释放锁
             lock.unlock();
         }
     }
 
+    //带超时时间的poll
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         long nanos = unit.toNanos(timeout);
         final ReentrantLock lock = this.lock;
@@ -429,12 +411,16 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         }
     }
 
+    //获取头节点
     public E peek() {
+        //获取锁，上锁
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            //直接返回takeIndex下标对应的值
             return itemAt(takeIndex); // null when queue is empty
         } finally {
+            //释放锁
             lock.unlock();
         }
     }
@@ -446,12 +432,16 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      *
      * @return the number of elements in this queue
      */
+    //获取队列大小，因为count没被volatile修饰
     public int size() {
+        //获取锁，上锁
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            //返回count
             return count;
         } finally {
+            //释放锁
             lock.unlock();
         }
     }
