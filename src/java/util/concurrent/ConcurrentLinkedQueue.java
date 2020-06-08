@@ -343,6 +343,8 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     }
 
 
+    //ConcurrentLinkedQueue是采用CAS+volatile ，可以保证可见性，但是无法保证整体的操作是原子性的
+    //所以他每次算size都需要遍历
     //统计队列中元素个数，多线程情况会有问题，因为没有通过CAS加锁
     public int size() {
         int count = 0;

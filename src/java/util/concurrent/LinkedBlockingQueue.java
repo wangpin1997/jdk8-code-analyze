@@ -46,89 +46,16 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
 
-/**
- * An optionally-bounded {@linkplain BlockingQueue blocking queue} based on
- * linked nodes.
- * This queue orders elements FIFO (first-in-first-out).
- * The <em>head</em> of the queue is that element that has been on the
- * queue the longest time.
- * The <em>tail</em> of the queue is that element that has been on the
- * queue the shortest time. New elements
- * are inserted at the tail of the queue, and the queue retrieval
- * operations obtain elements at the head of the queue.
- * Linked queues typically have higher throughput than array-based queues but
- * less predictable performance in most concurrent applications.
- *
- * <p>The optional capacity bound constructor argument serves as a
- * way to prevent excessive queue expansion. The capacity, if unspecified,
- * is equal to {@link Integer#MAX_VALUE}.  Linked nodes are
- * dynamically created upon each insertion unless this would bring the
- * queue above capacity.
- *
- * <p>This class and its iterator implement all of the
- * <em>optional</em> methods of the {@link Collection} and {@link
- * Iterator} interfaces.
- *
- * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
- *
- * @since 1.5
- * @author Doug Lea
- * @param <E> the type of elements held in this collection
- */
-//基于链表的阻塞队列
+//基于单向链表的阻塞队列
 public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         implements BlockingQueue<E>, java.io.Serializable {
     private static final long serialVersionUID = -6903933977591709194L;
 
-    /*
-     * A variant of the "two lock queue" algorithm.  The putLock gates
-     * entry to put (and offer), and has an associated condition for
-     * waiting puts.  Similarly for the takeLock.  The "count" field
-     * that they both rely on is maintained as an atomic to avoid
-     * needing to get both locks in most cases. Also, to minimize need
-     * for puts to get takeLock and vice-versa, cascading notifies are
-     * used. When a put notices that it has enabled at least one take,
-     * it signals taker. That taker in turn signals others if more
-     * items have been entered since the signal. And symmetrically for
-     * takes signalling puts. Operations such as remove(Object) and
-     * iterators acquire both locks.
-     *
-     * Visibility between writers and readers is provided as follows:
-     *
-     * Whenever an element is enqueued, the putLock is acquired and
-     * count updated.  A subsequent reader guarantees visibility to the
-     * enqueued Node by either acquiring the putLock (via fullyLock)
-     * or by acquiring the takeLock, and then reading n = count.get();
-     * this gives visibility to the first n items.
-     *
-     * To implement weakly consistent iterators, it appears we need to
-     * keep all Nodes GC-reachable from a predecessor dequeued Node.
-     * That would cause two problems:
-     * - allow a rogue Iterator to cause unbounded memory retention
-     * - cause cross-generational linking of old Nodes to new Nodes if
-     *   a Node was tenured while live, which generational GCs have a
-     *   hard time dealing with, causing repeated major collections.
-     * However, only non-deleted Nodes need to be reachable from
-     * dequeued Nodes, and reachability does not necessarily have to
-     * be of the kind understood by the GC.  We use the trick of
-     * linking a Node that has just been dequeued to itself.  Such a
-     * self-link implicitly means to advance to head.next.
-     */
 
-    /**
-     * Linked list node class
-     */
+    //内部底层数据结构
     static class Node<E> {
         E item;
 
-        /**
-         * One of:
-         * - the real successor Node
-         * - this Node, meaning the successor is head.next
-         * - null, meaning there is no successor (this is the last node)
-         */
         Node<E> next;
 
         Node(E x) { item = x; }
@@ -226,7 +153,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         // 之前说了，头结点是空的
         Node<E> h = head;
         Node<E> first = h.next;
-        h.next = h; // help GC
+        h.next = h; // help GC  自引用，会被GC掉
         // 设置这个为新的头结点
         head = first;
         E x = first.item;
@@ -237,6 +164,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     /**
      * Locks to prevent both puts and takes.
      */
+    //加双锁
     void fullyLock() {
         putLock.lock();
         takeLock.lock();
@@ -245,6 +173,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     /**
      * Unlocks to allow both puts and takes.
      */
+    //释放双锁
     void fullyUnlock() {
         takeLock.unlock();
         putLock.unlock();
@@ -281,16 +210,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         last = head = new Node<E>(null);
     }
 
-    /**
-     * Creates a {@code LinkedBlockingQueue} with a capacity of
-     * {@link Integer#MAX_VALUE}, initially containing the elements of the
-     * given collection,
-     * added in traversal order of the collection's iterator.
-     *
-     * @param c the collection of elements to initially contain
-     * @throws NullPointerException if the specified collection or any
-     *         of its elements are null
-     */
+    //构造方法，加锁了，线程安全
     public LinkedBlockingQueue(Collection<? extends E> c) {
         this(Integer.MAX_VALUE);
         final ReentrantLock putLock = this.putLock;
@@ -318,6 +238,9 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      *
      * @return the number of elements in this queue
      */
+    //获取队列大小
+    //ConcurrentLinkedQueue是采用CAS+volatile ，可以保证可见性，但是无法保证整体的操作是原子性的
+    //所以他每次算size都需要遍历
     public int size() {
         return count.get();
     }
@@ -347,24 +270,18 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException {@inheritDoc}
      */
     public void put(E e) throws InterruptedException {
+        //为空抛异常
         if (e == null) throw new NullPointerException();
-        // Note: convention in all put/take/etc is to preset local var
-        // holding count negative to indicate failure unless set.
+
         int c = -1;
+        //包装成Node,获取锁
         Node<E> node = new Node<E>(e);
         final ReentrantLock putLock = this.putLock;
         final AtomicInteger count = this.count;
         // 必须要获取到 putLock 才可以进行插入操作
         putLock.lockInterruptibly();
         try {
-            /*
-             * Note that count is used in wait guard even though it is
-             * not protected by lock. This works because count can
-             * only decrease at this point (all other puts are shut
-             * out by lock), and we (or some other waiting put) are
-             * signalled if it ever changes from capacity. Similarly
-             * for all other uses of count in other wait guards.
-             */
+
             // 如果队列满，等待 notFull 的条件满足。
             while (count.get() == capacity) {
                 notFull.await();
@@ -387,15 +304,8 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
             signalNotEmpty();
     }
 
-    /**
-     * Inserts the specified element at the tail of this queue, waiting if
-     * necessary up to the specified wait time for space to become available.
-     *
-     * @return {@code true} if successful, or {@code false} if
-     *         the specified waiting time elapses before space is available
-     * @throws InterruptedException {@inheritDoc}
-     * @throws NullPointerException {@inheritDoc}
-     */
+
+    //跟offer一样，不过带了超时时间
     public boolean offer(E e, long timeout, TimeUnit unit)
         throws InterruptedException {
 
@@ -423,36 +333,33 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         return true;
     }
 
-    /**
-     * Inserts the specified element at the tail of this queue if it is
-     * possible to do so immediately without exceeding the queue's capacity,
-     * returning {@code true} upon success and {@code false} if this queue
-     * is full.
-     * When using a capacity-restricted queue, this method is generally
-     * preferable to method {@link BlockingQueue#add add}, which can fail to
-     * insert an element only by throwing an exception.
-     *
-     * @throws NullPointerException if the specified element is null
-     */
+
     public boolean offer(E e) {
+        //为空抛空指针异常
         if (e == null) throw new NullPointerException();
         final AtomicInteger count = this.count;
+        //如果当前队列已满，则丢弃将要放入的元素，然后返回false
         if (count.get() == capacity)
             return false;
         int c = -1;
+        //不为空也没满，构造新节点，获取putLock锁
         Node<E> node = new Node<E>(e);
         final ReentrantLock putLock = this.putLock;
         putLock.lock();
         try {
+            //如果队列不满则进队列，并递增元素计数
             if (count.get() < capacity) {
                 enqueue(node);
                 c = count.getAndIncrement();
+                //如果还有空闲，则唤醒条件队列中的在await的元素
                 if (c + 1 < capacity)
                     notFull.signal();
             }
         } finally {
+            //释放锁
             putLock.unlock();
         }
+        //说明队列中至少有一个元素，则唤醒notEmpty条件队列中调用了await的线程
         if (c == 0)
             signalNotEmpty();
         return c >= 0;
@@ -513,41 +420,54 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         return x;
     }
 
+    //对头出队
     public E poll() {
         final AtomicInteger count = this.count;
+        //队列为空，返回null
         if (count.get() == 0)
             return null;
         E x = null;
         int c = -1;
+        //获取锁
         final ReentrantLock takeLock = this.takeLock;
+        //锁住
         takeLock.lock();
         try {
+            //队列不为空，就出队，c--
             if (count.get() > 0) {
                 x = dequeue();
                 c = count.getAndDecrement();
+                //c>1,说明队列中至少还有一个空位，唤醒notEmpty条件队列中的await线程
                 if (c > 1)
                     notEmpty.signal();
             }
         } finally {
+            //释放锁
             takeLock.unlock();
         }
+        //队列满了，但是这个方法会剔除一个元素，所以唤醒线程来写
         if (c == capacity)
             signalNotFull();
         return x;
     }
 
+    //获取队头元素
     public E peek() {
+        //队列为空，返回null
         if (count.get() == 0)
             return null;
+        //获取锁
         final ReentrantLock takeLock = this.takeLock;
         takeLock.lock();
         try {
+            //获取哨兵的next节点（真正的头节点），为空则返回null，否支返回其值
             Node<E> first = head.next;
             if (first == null)
                 return null;
             else
                 return first.item;
         } finally {
+            //释放锁
             takeLock.unlock();
         }
     }
@@ -555,33 +475,30 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     /**
      * Unlinks interior Node p with predecessor trail.
      */
+    //断开连接指向
     void unlink(Node<E> p, Node<E> trail) {
         // assert isFullyLocked();
         // p.next is not changed, to allow iterators that are
         // traversing p to maintain their weak-consistency guarantee.
         p.item = null;
+        //trail的next指向p的next,p就被架空了
         trail.next = p.next;
         if (last == p)
             last = trail;
+        //如果当前队列满了，删除后腾出一个空位，唤醒等待的线程
         if (count.getAndDecrement() == capacity)
             notFull.signal();
     }
 
-    /**
-     * Removes a single instance of the specified element from this queue,
-     * if it is present.  More formally, removes an element {@code e} such
-     * that {@code o.equals(e)}, if this queue contains one or more such
-     * elements.
-     * Returns {@code true} if this queue contained the specified element
-     * (or equivalently, if this queue changed as a result of the call).
-     *
-     * @param o element to be removed from this queue, if present
-     * @return {@code true} if this queue changed as a result of the call
-     */
+
+    //删除元素
     public boolean remove(Object o) {
+        //为空则返回null
         if (o == null) return false;
+        //加双层锁，这样的话，其他线程入队或者出队都会被阻塞
         fullyLock();
         try {
+            //遍历队列找到并删除，返回true
             for (Node<E> trail = head, p = trail.next;
                  p != null;
                  trail = p, p = p.next) {
@@ -590,20 +507,15 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
                     return true;
                 }
             }
+            //找不到，返回法拉瑟
             return false;
         } finally {
+            //释放锁
             fullyUnlock();
         }
     }
 
-    /**
-     * Returns {@code true} if this queue contains the specified element.
-     * More formally, returns {@code true} if and only if this queue contains
-     * at least one element {@code e} such that {@code o.equals(e)}.
-     *
-     * @param o object to be checked for containment in this queue
-     * @return {@code true} if this queue contains the specified element
-     */
+    //是否包含某对象，也用到了双锁，线程安全
     public boolean contains(Object o) {
         if (o == null) return false;
         fullyLock();
@@ -725,6 +637,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      * Atomically removes all of the elements from this queue.
      * The queue will be empty after this call returns.
      */
+    //清空队列，用到双锁，线程安全
     public void clear() {
         fullyLock();
         try {
