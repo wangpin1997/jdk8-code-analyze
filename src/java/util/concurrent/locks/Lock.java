@@ -164,6 +164,7 @@ import java.util.concurrent.TimeUnit;
  * @since 1.5
  * @author Doug Lea
  */
+//锁的最上层接口
 public interface Lock {
 
     /**
@@ -181,6 +182,7 @@ public interface Lock {
      * circumstances and the exception type must be documented by that
      * {@code Lock} implementation.
      */
+    //上锁
     void lock();
 
     /**
@@ -229,6 +231,7 @@ public interface Lock {
      *         interrupted while acquiring the lock (and interruption
      *         of lock acquisition is supported)
      */
+    //上锁，但是如被其他线程打断，就会抛出异常
     void lockInterruptibly() throws InterruptedException;
 
     /**
@@ -258,6 +261,7 @@ public interface Lock {
      * @return {@code true} if the lock was acquired and
      *         {@code false} otherwise
      */
+    //尝试获取锁
     boolean tryLock();
 
     /**
@@ -318,6 +322,7 @@ public interface Lock {
      *         while acquiring the lock (and interruption of lock
      *         acquisition is supported)
      */
+    //尝试获取锁，没有成功就挂起time指定时间，然后醒来在获取，再失败就返回false
     boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
 
     /**
@@ -332,6 +337,7 @@ public interface Lock {
      * Any restrictions and the exception
      * type must be documented by that {@code Lock} implementation.
      */
+    //释放锁
     void unlock();
 
     /**
@@ -353,5 +359,6 @@ public interface Lock {
      * @throws UnsupportedOperationException if this {@code Lock}
      *         implementation does not support conditions
      */
+    //获取条件对象，内部维护了一个条件队列
     Condition newCondition();
 }
