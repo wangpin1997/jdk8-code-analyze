@@ -342,45 +342,26 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
         }
     }
 
-    /**
-     * Atomically removes all of the elements from this delay queue.
-     * The queue will be empty after this call returns.
-     * Elements with an unexpired delay are not waited for; they are
-     * simply discarded from the queue.
-     */
+    //清空队列
     public void clear() {
+        //获取锁，并上锁
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            //清空
             q.clear();
         } finally {
+            //释放锁
             lock.unlock();
         }
     }
 
-    /**
-     * Always returns {@code Integer.MAX_VALUE} because
-     * a {@code DelayQueue} is not capacity constrained.
-     *
-     * @return {@code Integer.MAX_VALUE}
-     */
+
     public int remainingCapacity() {
         return Integer.MAX_VALUE;
     }
 
-    /**
-     * Returns an array containing all of the elements in this queue.
-     * The returned array elements are in no particular order.
-     *
-     * <p>The returned array will be "safe" in that no references to it are
-     * maintained by this queue.  (In other words, this method must allocate
-     * a new array).  The caller is thus free to modify the returned array.
-     *
-     * <p>This method acts as bridge between array-based and collection-based
-     * APIs.
-     *
-     * @return an array containing all of the elements in this queue
-     */
+
     public Object[] toArray() {
         final ReentrantLock lock = this.lock;
         lock.lock();
@@ -391,41 +372,7 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
         }
     }
 
-    /**
-     * Returns an array containing all of the elements in this queue; the
-     * runtime type of the returned array is that of the specified array.
-     * The returned array elements are in no particular order.
-     * If the queue fits in the specified array, it is returned therein.
-     * Otherwise, a new array is allocated with the runtime type of the
-     * specified array and the size of this queue.
-     *
-     * <p>If this queue fits in the specified array with room to spare
-     * (i.e., the array has more elements than this queue), the element in
-     * the array immediately following the end of the queue is set to
-     * {@code null}.
-     *
-     * <p>Like the {@link #toArray()} method, this method acts as bridge between
-     * array-based and collection-based APIs.  Further, this method allows
-     * precise control over the runtime type of the output array, and may,
-     * under certain circumstances, be used to save allocation costs.
-     *
-     * <p>The following code can be used to dump a delay queue into a newly
-     * allocated array of {@code Delayed}:
-     *
-     * <pre> {@code Delayed[] a = q.toArray(new Delayed[0]);}</pre>
-     *
-     * Note that {@code toArray(new Object[0])} is identical in function to
-     * {@code toArray()}.
-     *
-     * @param a the array into which the elements of the queue are to
-     *          be stored, if it is big enough; otherwise, a new array of the
-     *          same runtime type is allocated for this purpose
-     * @return an array containing all of the elements in this queue
-     * @throws ArrayStoreException if the runtime type of the specified array
-     *         is not a supertype of the runtime type of every element in
-     *         this queue
-     * @throws NullPointerException if the specified array is null
-     */
+
     public <T> T[] toArray(T[] a) {
         final ReentrantLock lock = this.lock;
         lock.lock();
@@ -436,10 +383,7 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
         }
     }
 
-    /**
-     * Removes a single instance of the specified element from this
-     * queue, if it is present, whether or not it has expired.
-     */
+
     public boolean remove(Object o) {
         final ReentrantLock lock = this.lock;
         lock.lock();
