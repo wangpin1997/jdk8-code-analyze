@@ -118,6 +118,7 @@ import java.util.*;
  * @since 1.5
  * @author Doug Lea
  */
+//创建一个定时和周期性执行任务的线程池
 public class ScheduledThreadPoolExecutor
         extends ThreadPoolExecutor
         implements ScheduledExecutorService {
