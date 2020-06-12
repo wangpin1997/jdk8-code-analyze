@@ -1137,6 +1137,7 @@ public abstract class AbstractQueuedSynchronizer
      * Acquires in shared interruptible mode.
      * @param arg the acquire argument
      */
+    //countdownLanch会进这里
     private void doAcquireSharedInterruptibly(int arg)
         throws InterruptedException {
         //入队
@@ -1386,22 +1387,10 @@ public abstract class AbstractQueuedSynchronizer
             selfInterrupt();
     }
 
-    /**
-     * Acquires in exclusive mode, aborting if interrupted.
-     * Implemented by first checking interrupt status, then invoking
-     * at least once {@link #tryAcquire}, returning on
-     * success.  Otherwise the thread is queued, possibly repeatedly
-     * blocking and unblocking, invoking {@link #tryAcquire}
-     * until success or the thread is interrupted.  This method can be
-     * used to implement method {@link Lock#lockInterruptibly}.
-     *
-     * @param arg the acquire argument.  This value is conveyed to
-     *        {@link #tryAcquire} but is otherwise uninterpreted and
-     *        can represent anything you like.
-     * @throws InterruptedException if the current thread is interrupted
-     */
+
     public final void acquireInterruptibly(int arg)
             throws InterruptedException {
+        //线程被打断则抛异常
         if (Thread.interrupted())
             throw new InterruptedException();
         if (!tryAcquire(arg))
@@ -1495,6 +1484,7 @@ public abstract class AbstractQueuedSynchronizer
      * you like.
      * @throws InterruptedException if the current thread is interrupted
      */
+    //AQS获取共享资源时可被中断的方法
     public final void acquireSharedInterruptibly(int arg)
             throws InterruptedException {
         //如被打断，抛出异常

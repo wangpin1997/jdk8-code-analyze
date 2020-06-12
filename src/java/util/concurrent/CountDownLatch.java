@@ -206,94 +206,23 @@ public class CountDownLatch {
         this.sync = new Sync(count);
     }
 
-    /**
-     * Causes the current thread to wait until the latch has counted down to
-     * zero, unless the thread is {@linkplain Thread#interrupt interrupted}.
-     *
-     * <p>If the current count is zero then this method returns immediately.
-     *
-     * <p>If the current count is greater than zero then the current
-     * thread becomes disabled for thread scheduling purposes and lies
-     * dormant until one of two things happen:
-     * <ul>
-     * <li>The count reaches zero due to invocations of the
-     * {@link #countDown} method; or
-     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
-     * the current thread.
-     * </ul>
-     *
-     * <p>If the current thread:
-     * <ul>
-     * <li>has its interrupted status set on entry to this method; or
-     * <li>is {@linkplain Thread#interrupt interrupted} while waiting,
-     * </ul>
-     * then {@link InterruptedException} is thrown and the current thread's
-     * interrupted status is cleared.
-     *
-     * @throws InterruptedException if the current thread is interrupted
-     *         while waiting
-     */
+    //调用该方法，当前线程会被阻塞，解除阻塞的两种方法
+    // 1.当所有线程都调用了countdown()方法后，也就是state为0的时候，
+    // 2.或者其他线程调用了当前线程的interrupt方法中断当前线程，会抛异常
+    // 3.线程池shutdown的时候
     public void await() throws InterruptedException {
         sync.acquireSharedInterruptibly(1);
     }
 
-    /**
-     * Causes the current thread to wait until the latch has counted down to
-     * zero, unless the thread is {@linkplain Thread#interrupt interrupted},
-     * or the specified waiting time elapses.
-     *
-     * <p>If the current count is zero then this method returns immediately
-     * with the value {@code true}.
-     *
-     * <p>If the current count is greater than zero then the current
-     * thread becomes disabled for thread scheduling purposes and lies
-     * dormant until one of three things happen:
-     * <ul>
-     * <li>The count reaches zero due to invocations of the
-     * {@link #countDown} method; or
-     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
-     * the current thread; or
-     * <li>The specified waiting time elapses.
-     * </ul>
-     *
-     * <p>If the count reaches zero then the method returns with the
-     * value {@code true}.
-     *
-     * <p>If the current thread:
-     * <ul>
-     * <li>has its interrupted status set on entry to this method; or
-     * <li>is {@linkplain Thread#interrupt interrupted} while waiting,
-     * </ul>
-     * then {@link InterruptedException} is thrown and the current thread's
-     * interrupted status is cleared.
-     *
-     * <p>If the specified waiting time elapses then the value {@code false}
-     * is returned.  If the time is less than or equal to zero, the method
-     * will not wait at all.
-     *
-     * @param timeout the maximum time to wait
-     * @param unit the time unit of the {@code timeout} argument
-     * @return {@code true} if the count reached zero and {@code false}
-     *         if the waiting time elapsed before the count reached zero
-     * @throws InterruptedException if the current thread is interrupted
-     *         while waiting
-     */
+    //跟上面方法一样，如果超时时间过了，则会返回false
     public boolean await(long timeout, TimeUnit unit)
         throws InterruptedException {
         return sync.tryAcquireSharedNanos(1, unit.toNanos(timeout));
     }
 
-    /**
-     * Decrements the count of the latch, releasing all waiting threads if
-     * the count reaches zero.
-     *
-     * <p>If the current count is greater than zero then it is decremented.
-     * If the new count is zero then all waiting threads are re-enabled for
-     * thread scheduling purposes.
-     *
-     * <p>If the current count equals zero then nothing happens.
-     */
+    //调用一次就state-1，当state为0的时候就唤醒所有因为调用await方法而被阻塞的线程，否则什么都不做
     public void countDown() {
+        //调用AQS中的释放共享锁方法
         sync.releaseShared(1);
     }
 
@@ -304,6 +233,7 @@ public class CountDownLatch {
      *
      * @return the current count
      */
+    //获取计数器的值，也是从AQS中获取
     public long getCount() {
         return sync.getCount();
     }
