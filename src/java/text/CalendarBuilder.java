@@ -99,7 +99,8 @@ class CalendarBuilder {
         field[MAX_FIELD + index] = 0;
         return this;
     }
-
+    //大概就是因为这个方法不是线程安全的，导致SimpleDateFormat线程不安全
+    //这里的重置属性值，设置属性，都非原子性操作，在多线程情况下就会抛异常
     Calendar establish(Calendar cal) {
         boolean weekDate = isSet(WEEK_YEAR)
                             && field[WEEK_YEAR] > field[YEAR];
@@ -110,10 +111,11 @@ class CalendarBuilder {
             }
             weekDate = false;
         }
-
+        //重置日期对象cal的属性值
         cal.clear();
         // Set the fields from the min stamp to the max stamp so that
         // the field resolution works in the Calendar.
+        //使用calb的属性设置cal
         for (int stamp = MINIMUM_USER_STAMP; stamp < nextStamp; stamp++) {
             for (int index = 0; index <= maxFieldIndex; index++) {
                 if (field[index] == stamp) {
@@ -142,6 +144,7 @@ class CalendarBuilder {
             }
             cal.setWeekDate(field[MAX_FIELD + WEEK_YEAR], weekOfYear, dayOfWeek);
         }
+        //返回设置好的cal对象
         return cal;
     }
 
