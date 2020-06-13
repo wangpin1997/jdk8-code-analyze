@@ -141,7 +141,7 @@ public class Executors {
                                       threadFactory);
     }
 
-
+    //周期性的线程池
     public static ScheduledExecutorService newSingleThreadScheduledExecutor() {
         return new DelegatedScheduledExecutorService
             (new ScheduledThreadPoolExecutor(1));

@@ -125,6 +125,7 @@ package java.util.concurrent;
  * @since 1.5
  * @author Doug Lea
  */
+//线程池顶级父类
 public interface Executor {
 
     /**

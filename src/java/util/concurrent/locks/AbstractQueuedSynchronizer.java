@@ -1491,7 +1491,9 @@ public abstract class AbstractQueuedSynchronizer
         if (Thread.interrupted())
             throw new InterruptedException();
         //尝试获取共享锁
+        //如是信号量，则这里采用的是公平锁
         if (tryAcquireShared(arg) < 0)
+            //如果获取失败，则放入阻塞队列，然后再次尝试，如果再失败则调用park方法挂起当前线程
             doAcquireSharedInterruptibly(arg);
     }
 
@@ -1537,6 +1539,7 @@ public abstract class AbstractQueuedSynchronizer
         // 否则只是简单的 state = state - 1 那么 countDown() 方法就结束了
         //    将 state 减到 0 的那个操作才是最复杂的，继续往下吧
         if (tryReleaseShared(arg)) {//尝试释放资源
+            //资源释放成功，则调用park方法唤醒AQS阻塞队列中最先挂起的线程
             doReleaseShared();//唤醒后继节点
             return true;
         }
