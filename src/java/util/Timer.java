@@ -472,12 +472,9 @@ public class Timer {
      }
 }
 
-/**
- * This "helper class" implements the timer's task execution thread, which
- * waits for tasks on the timer queue, executions them when they fire,
- * reschedules repeating tasks, and removes cancelled tasks and spent
- * non-repeating tasks from the queue.
- */
+//是具体执行任务的线程，它从TaskQueue中获取优先级最高的队列进行执行
+//他只会在执行完了当前任务的时候才会去队列中获取下一个任务，而不管你的延迟时间是否到期
+//一个Timer只有一个TimerThread线程，所以Timer是一个多生产者-单消费者的模型
 class TimerThread extends Thread {
     /**
      * This flag is set to false by the reaper to inform us that there
@@ -505,6 +502,7 @@ class TimerThread extends Thread {
             mainLoop();
         } finally {
             // Someone killed this Thread, behave as if Timer cancelled
+            //从任务队列获取锁要加锁
             synchronized(queue) {
                 newTasksMayBeScheduled = false;
                 queue.clear();  // Eliminate obsolete references
@@ -520,6 +518,7 @@ class TimerThread extends Thread {
             try {
                 TimerTask task;
                 boolean taskFired;
+                //从任务队列获取锁要加锁
                 synchronized(queue) {
                     // Wait for queue to become non-empty
                     while (queue.isEmpty() && newTasksMayBeScheduled)
@@ -552,6 +551,7 @@ class TimerThread extends Thread {
                         queue.wait(executionTime - currentTime);
                 }
                 if (taskFired)  // Task fired; run it, holding no locks
+                    //执行任务
                     task.run();
             } catch(InterruptedException e) {
             }
@@ -566,6 +566,8 @@ class TimerThread extends Thread {
  * offers log(n) performance for the add, removeMin and rescheduleMin
  * operations, and constant time performance for the getMin operation.
  */
+//是一个由平衡二叉堆实现的优先级队列，每个Timer对象内部都有一个TaskQueue队列
+//用户线程调用Timer的schedule方法就是把TimerTask添加到TaskQueue队列，delay参数代表延迟多久开始执行
 class TaskQueue {
     /**
      * Priority queue represented as a balanced binary heap: the two children
