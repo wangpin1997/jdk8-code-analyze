@@ -569,6 +569,7 @@ class TimerThread extends Thread {
 //是一个由平衡二叉堆实现的优先级队列，每个Timer对象内部都有一个TaskQueue队列
 //用户线程调用Timer的schedule方法就是把TimerTask添加到TaskQueue队列，delay参数代表延迟多久开始执行
 class TaskQueue {
+
     /**
      * Priority queue represented as a balanced binary heap: the two children
      * of queue[n] are queue[2*n] and queue[2*n+1].  The priority queue is
