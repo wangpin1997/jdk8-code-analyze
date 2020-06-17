@@ -46,6 +46,7 @@ package java.util.concurrent;
  * @since 1.5
  * @author Doug Lea
  */
+//超时异常类
 public class TimeoutException extends Exception {
     private static final long serialVersionUID = 1900926677490660714L;
 
