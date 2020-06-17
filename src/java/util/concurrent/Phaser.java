@@ -258,6 +258,7 @@ import java.util.concurrent.locks.LockSupport;
  * @since 1.7
  * @author Doug Lea
  */
+//CyclicBarrier 以及 CountDownLatch 很像，但是使用上更加的灵活。
 public class Phaser {
     /*
      * This class implements an extension of X10 "clocks".  Thanks to
@@ -1146,6 +1147,7 @@ public class Phaser {
 
     // Unsafe mechanics
 
+    //通过unsafe实例获取state的偏移量
     private static final sun.misc.Unsafe UNSAFE;
     private static final long stateOffset;
     static {

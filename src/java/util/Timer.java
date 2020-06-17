@@ -85,7 +85,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @see     Object#wait(long)
  * @since   1.3
  */
-
+//以Timer是一个多生产者-单消费者的模型
 public class Timer {
     /**
      * The timer task queue.  This data structure is shared with the timer
