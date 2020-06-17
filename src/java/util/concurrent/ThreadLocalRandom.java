@@ -80,6 +80,7 @@ import sun.misc.VM;
  * @since 1.7
  * @author Doug Lea
  */
+//基于ThreadLocal的一个并发的Random器
 public class ThreadLocalRandom extends Random {
     /*
      * This class implements the java.util.Random API (and subclasses
