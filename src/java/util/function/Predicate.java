@@ -36,6 +36,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+//函数式接口，断定型接口，返回Boolean，用于filter方法
 @FunctionalInterface
 public interface Predicate<T> {
 
@@ -46,6 +47,7 @@ public interface Predicate<T> {
      * @return {@code true} if the input argument matches the predicate,
      * otherwise {@code false}
      */
+    //关键方法，返回boolean值，filter方法中应用
     boolean test(T t);
 
     /**

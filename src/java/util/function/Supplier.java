@@ -37,6 +37,7 @@ package java.util.function;
  *
  * @since 1.8
  */
+//供给型接口，没有参数，只有返回值 collect方法常用
 @FunctionalInterface
 public interface Supplier<T> {
 

@@ -37,6 +37,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+//函数式接口,有一个输入参数，有一个输出参数，用于map类型的方法
 @FunctionalInterface
 public interface Function<T, R> {
 
@@ -46,6 +47,7 @@ public interface Function<T, R> {
      * @param t the function argument
      * @return the function result
      */
+    //关键方法，传入参数T,返回参数R
     R apply(T t);
 
     /**

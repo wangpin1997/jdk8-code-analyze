@@ -61,92 +61,35 @@ import java.util.function.Predicate;
  * @see DoubleStream
  * @see <a href="package-summary.html">java.util.stream</a>
  */
+//流操作的最顶层接口
+// T代表指定stream元素的类型，S代表stream的实现类
 public interface BaseStream<T, S extends BaseStream<T, S>>
         extends AutoCloseable {
-    /**
-     * Returns an iterator for the elements of this stream.
-     *
-     * <p>This is a <a href="package-summary.html#StreamOps">terminal
-     * operation</a>.
-     *
-     * @return the element iterator for this stream
-     */
+
+    //迭代方法
     Iterator<T> iterator();
 
-    /**
-     * Returns a spliterator for the elements of this stream.
-     *
-     * <p>This is a <a href="package-summary.html#StreamOps">terminal
-     * operation</a>.
-     *
-     * @return the element spliterator for this stream
-     */
+
+    //跟迭代方法类似，到那时返回的对象是Spliterator，他可以将元素分割成多份，分别交于不同的线程。提高效率
     Spliterator<T> spliterator();
 
-    /**
-     * Returns whether this stream, if a terminal operation were to be executed,
-     * would execute in parallel.  Calling this method after invoking an
-     * terminal stream operation method may yield unpredictable results.
-     *
-     * @return {@code true} if this stream would execute in parallel if executed
-     */
+
+    //是否为并行流
     boolean isParallel();
 
-    /**
-     * Returns an equivalent stream that is sequential.  May return
-     * itself, either because the stream was already sequential, or because
-     * the underlying stream state was modified to be sequential.
-     *
-     * <p>This is an <a href="package-summary.html#StreamOps">intermediate
-     * operation</a>.
-     *
-     * @return a sequential stream
-     */
+
+    //返回一个串行流，如果流本身就是串行的，就返回其本身
     S sequential();
 
-    /**
-     * Returns an equivalent stream that is parallel.  May return
-     * itself, either because the stream was already parallel, or because
-     * the underlying stream state was modified to be parallel.
-     *
-     * <p>This is an <a href="package-summary.html#StreamOps">intermediate
-     * operation</a>.
-     *
-     * @return a parallel stream
-     */
+
+    //返回一个并行流，如果流本身是并行的，就返回其本身
     S parallel();
 
-    /**
-     * Returns an equivalent stream that is
-     * <a href="package-summary.html#Ordering">unordered</a>.  May return
-     * itself, either because the stream was already unordered, or because
-     * the underlying stream state was modified to be unordered.
-     *
-     * <p>This is an <a href="package-summary.html#StreamOps">intermediate
-     * operation</a>.
-     *
-     * @return an unordered stream
-     */
+
+    //返回一个无序流，如果其本身是无序的，则返回其本身
     S unordered();
 
-    /**
-     * Returns an equivalent stream with an additional close handler.  Close
-     * handlers are run when the {@link #close()} method
-     * is called on the stream, and are executed in the order they were
-     * added.  All close handlers are run, even if earlier close handlers throw
-     * exceptions.  If any close handler throws an exception, the first
-     * exception thrown will be relayed to the caller of {@code close()}, with
-     * any remaining exceptions added to that exception as suppressed exceptions
-     * (unless one of the remaining exceptions is the same exception as the
-     * first exception, since an exception cannot suppress itself.)  May
-     * return itself.
-     *
-     * <p>This is an <a href="package-summary.html#StreamOps">intermediate
-     * operation</a>.
-     *
-     * @param closeHandler A task to execute when the stream is closed
-     * @return a stream with a handler that is run if the stream is closed
-     */
+    //返回一个带着关闭处理的流，closeHandler线程将在调用close方法的时候调用
     S onClose(Runnable closeHandler);
 
     /**
@@ -155,6 +98,7 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      *
      * @see AutoCloseable#close()
      */
+    //继承自于AutoCloseable接口，关流方法
     @Override
     void close();
 }

@@ -48,6 +48,7 @@ package java.lang;
  * @author Josh Bloch
  * @since 1.7
  */
+//这是流式编程的最顶级接口，就定义了一个方法，close，关流
 public interface AutoCloseable {
     /**
      * Closes this resource, relinquishing any underlying resources.
@@ -94,5 +95,6 @@ public interface AutoCloseable {
      *
      * @throws Exception if this resource cannot be closed
      */
+    //关流
     void close() throws Exception;
 }

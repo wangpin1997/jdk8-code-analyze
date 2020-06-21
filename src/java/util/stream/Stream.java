@@ -151,6 +151,7 @@ import java.util.function.UnaryOperator;
  * @see DoubleStream
  * @see <a href="package-summary.html">java.util.stream</a>
  */
+//此接口是所有流的父接口，方法都在此定义，继承自baseStream
 public interface Stream<T> extends BaseStream<T, Stream<T>> {
 
     /**
@@ -166,6 +167,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *                  should be included
      * @return the new stream
      */
+    //接收一个lambda表达式，Predicate类型，过滤出符合条件的元素，并返回一个新流
     Stream<T> filter(Predicate<? super T> predicate);
 
     /**
@@ -181,6 +183,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *               function to apply to each element
      * @return the new stream
      */
+    //接收一个lambda表达式，Function类型，过滤出符合条件的元素，并返回一个新流
     <R> Stream<R> map(Function<? super T, ? extends R> mapper);
 
     /**
@@ -495,6 +498,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @param action a <a href="package-summary.html#NonInterference">
      *               non-interfering</a> action to perform on the elements
      */
+    //传入一个lambda，遍历流，无返回值
     void forEach(Consumer<? super T> action);
 
     /**
@@ -604,6 +608,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *                    function for combining two values
      * @return the result of the reduction
      */
+    //该方法接收一个lambda表达式(BiFunction类型)过滤出符合条件的元素，并返回结果
     T reduce(T identity, BinaryOperator<T> accumulator);
 
     /**

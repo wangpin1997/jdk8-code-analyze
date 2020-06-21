@@ -38,6 +38,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+//名字可以看出，消费型接口，无返回值，一般用于foreach遍历
 @FunctionalInterface
 public interface Consumer<T> {
 
@@ -46,6 +47,7 @@ public interface Consumer<T> {
      *
      * @param t the input argument
      */
+    //关键方法，传入参数为T，无返回值
     void accept(T t);
 
     /**
