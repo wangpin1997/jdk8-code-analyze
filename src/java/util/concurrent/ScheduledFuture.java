@@ -44,5 +44,6 @@ package java.util.concurrent;
  * @author Doug Lea
  * @param <V> The result type returned by this Future
  */
+//周期性线程池的父接口
 public interface ScheduledFuture<V> extends Delayed, Future<V> {
 }
